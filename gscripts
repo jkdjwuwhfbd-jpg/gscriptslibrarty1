@@ -9,6 +9,7 @@ gui.Name = "gscripts"
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.DisplayOrder = 999
+gui.IgnoreGuiInset = true
 
 if syn and syn.protect_gui then
 	syn.protect_gui(gui)
@@ -19,28 +20,45 @@ else
 	gui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 end
 
-local function tw(obj, props, t, style)
-	TweenService:Create(obj, TweenInfo.new(t or 0.2, style or Enum.EasingStyle.Quart, Enum.EasingDirection.Out), props):Play()
+local function tw(obj, props, t)
+	TweenService:Create(obj, TweenInfo.new(t or 0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), props):Play()
+end
+
+local function isTouch(i)
+	return i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1
+end
+
+local function isMoved(i)
+	return i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement
 end
 
 local function draggable(frame, grip)
-	local down, last, origin
+	local down = false
+	local startInput, startPos
+
 	grip.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+		if isTouch(i) then
 			down = true
-			last = i.Position
-			origin = frame.Position
-			i.Changed:Connect(function()
-				if i.UserInputState == Enum.UserInputState.End then
-					down = false
-				end
-			end)
+			startInput = i.Position
+			startPos = frame.Position
 		end
 	end)
+
 	UserInputService.InputChanged:Connect(function(i)
-		if down and i.UserInputType == Enum.UserInputType.MouseMovement then
-			local d = i.Position - last
-			frame.Position = UDim2.new(origin.X.Scale, origin.X.Offset + d.X, origin.Y.Scale, origin.Y.Offset + d.Y)
+		if down and isMoved(i) then
+			local delta = i.Position - startInput
+			frame.Position = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+		end
+	end)
+
+	UserInputService.InputEnded:Connect(function(i)
+		if isTouch(i) then
+			down = false
 		end
 	end)
 end
@@ -53,65 +71,48 @@ function lib.new(name)
 
 	local win = Instance.new("Frame")
 	win.Name = "window"
-	win.Size = UDim2.new(0, 210, 0, 38)
-	win.Position = UDim2.new(0.5, -105, 0.04, 0)
-	win.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+	win.Size = UDim2.new(0, 220, 0, 42)
+	win.Position = UDim2.new(0.5, -110, 0.05, 0)
+	win.BackgroundColor3 = Color3.fromRGB(11, 11, 16)
 	win.BorderSizePixel = 0
 	win.ClipsDescendants = true
 	win.Parent = gui
 
-	local wc = Instance.new("UICorner")
-	wc.CornerRadius = UDim.new(0, 10)
-	wc.Parent = win
+	Instance.new("UICorner", win).CornerRadius = UDim.new(0, 12)
 
-	local ws = Instance.new("UIStroke")
+	local ws = Instance.new("UIStroke", win)
 	ws.Color = Color3.fromRGB(255, 255, 255)
 	ws.Thickness = 1
-	ws.Transparency = 0.88
-	ws.Parent = win
+	ws.Transparency = 0.87
 
 	local topbar = Instance.new("Frame")
-	topbar.Size = UDim2.new(1, 0, 0, 38)
-	topbar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+	topbar.Size = UDim2.new(1, 0, 0, 42)
+	topbar.BackgroundColor3 = Color3.fromRGB(17, 17, 24)
 	topbar.BorderSizePixel = 0
 	topbar.ZIndex = 2
 	topbar.Parent = win
 
-	local tbc = Instance.new("UICorner")
-	tbc.CornerRadius = UDim.new(0, 10)
-	tbc.Parent = topbar
-
-	local pill = Instance.new("Frame")
-	pill.Size = UDim2.new(0, 4, 0, 18)
-	pill.Position = UDim2.new(0, 11, 0.5, -9)
-	pill.BackgroundColor3 = Color3.fromRGB(140, 85, 255)
-	pill.BorderSizePixel = 0
-	pill.ZIndex = 3
-	pill.Parent = topbar
-
-	local pillc = Instance.new("UICorner")
-	pillc.CornerRadius = UDim.new(1, 0)
-	pillc.Parent = pill
+	Instance.new("UICorner", topbar).CornerRadius = UDim.new(0, 12)
 
 	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1, -60, 1, 0)
-	title.Position = UDim2.new(0, 22, 0, 0)
+	title.Size = UDim2.new(1, -48, 1, 0)
+	title.Position = UDim2.new(0, 14, 0, 0)
 	title.BackgroundTransparency = 1
 	title.Text = name or "gscripts"
-	title.TextColor3 = Color3.fromRGB(230, 230, 240)
-	title.TextSize = 13
+	title.TextColor3 = Color3.fromRGB(235, 235, 245)
+	title.TextSize = 14
 	title.Font = Enum.Font.GothamBold
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.ZIndex = 3
 	title.Parent = topbar
 
 	local arrow = Instance.new("TextLabel")
-	arrow.Size = UDim2.new(0, 24, 1, 0)
-	arrow.Position = UDim2.new(1, -30, 0, 0)
+	arrow.Size = UDim2.new(0, 28, 1, 0)
+	arrow.Position = UDim2.new(1, -34, 0, 0)
 	arrow.BackgroundTransparency = 1
 	arrow.Text = "›"
 	arrow.TextColor3 = Color3.fromRGB(140, 85, 255)
-	arrow.TextSize = 18
+	arrow.TextSize = 20
 	arrow.Font = Enum.Font.GothamBold
 	arrow.Rotation = 90
 	arrow.ZIndex = 3
@@ -119,31 +120,30 @@ function lib.new(name)
 
 	local body = Instance.new("Frame")
 	body.Name = "body"
-	body.Size = UDim2.new(1, 0, 1, -38)
-	body.Position = UDim2.new(0, 0, 0, 38)
+	body.Size = UDim2.new(1, 0, 1, -42)
+	body.Position = UDim2.new(0, 0, 0, 42)
 	body.BackgroundTransparency = 1
 	body.Parent = win
 
 	self.win = win
 	self.body = body
-	self._arrow = arrow
 
 	draggable(win, topbar)
 
-	local clickblocker = Instance.new("TextButton")
-	clickblocker.Size = UDim2.new(1, 0, 1, 0)
-	clickblocker.BackgroundTransparency = 1
-	clickblocker.Text = ""
-	clickblocker.ZIndex = 4
-	clickblocker.Parent = topbar
+	local clickzone = Instance.new("TextButton")
+	clickzone.Size = UDim2.new(1, 0, 1, 0)
+	clickzone.BackgroundTransparency = 1
+	clickzone.Text = ""
+	clickzone.ZIndex = 4
+	clickzone.Parent = topbar
 
-	clickblocker.MouseButton1Click:Connect(function()
+	clickzone.MouseButton1Click:Connect(function()
 		self._open = not self._open
 		if self._open then
-			tw(win, {Size = UDim2.new(0, 210, 0, 38 + self._height)}, 0.3, Enum.EasingStyle.Quart)
+			tw(win, {Size = UDim2.new(0, 220, 0, 42 + self._height)}, 0.3)
 			tw(arrow, {Rotation = 270}, 0.25)
 		else
-			tw(win, {Size = UDim2.new(0, 210, 0, 38)}, 0.3, Enum.EasingStyle.Quart)
+			tw(win, {Size = UDim2.new(0, 220, 0, 42)}, 0.3)
 			tw(arrow, {Rotation = 90}, 0.25)
 		end
 	end)
@@ -151,118 +151,111 @@ function lib.new(name)
 	return self
 end
 
-function lib:_update()
+function lib:_sync()
 	self._height = self._y + 8
 	if self._open then
-		self.win.Size = UDim2.new(0, 210, 0, 38 + self._height)
+		self.win.Size = UDim2.new(0, 220, 0, 42 + self._height)
 	end
 end
 
 function lib:Button(text, fn)
 	local y = self._y
-	self._y = self._y + 36
+	self._y = self._y + 40
 
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, -16, 0, 28)
-	btn.Position = UDim2.new(0, 8, 0, y)
-	btn.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	btn.Size = UDim2.new(1, -18, 0, 32)
+	btn.Position = UDim2.new(0, 9, 0, y)
+	btn.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
 	btn.BorderSizePixel = 0
 	btn.Text = text
-	btn.TextColor3 = Color3.fromRGB(210, 210, 225)
-	btn.TextSize = 12
+	btn.TextColor3 = Color3.fromRGB(215, 215, 230)
+	btn.TextSize = 13
 	btn.Font = Enum.Font.Gotham
 	btn.AutoButtonColor = false
 	btn.Parent = self.body
 
-	local bc = Instance.new("UICorner")
-	bc.CornerRadius = UDim.new(0, 7)
-	bc.Parent = btn
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 
-	local bs = Instance.new("UIStroke")
+	local bs = Instance.new("UIStroke", btn)
 	bs.Color = Color3.fromRGB(255, 255, 255)
 	bs.Thickness = 1
-	bs.Transparency = 0.9
-	bs.Parent = btn
+	bs.Transparency = 0.88
+
+	local function press()
+		tw(btn, {BackgroundColor3 = Color3.fromRGB(100, 55, 200)}, 0.08)
+		task.delay(0.12, function()
+			tw(btn, {BackgroundColor3 = Color3.fromRGB(140, 85, 255)}, 0.12)
+		end)
+		if fn then task.spawn(fn) end
+	end
 
 	btn.MouseEnter:Connect(function()
-		tw(btn, {BackgroundColor3 = Color3.fromRGB(140, 85, 255)}, 0.18)
-		tw(bs, {Transparency = 1}, 0.18)
+		tw(btn, {BackgroundColor3 = Color3.fromRGB(140, 85, 255)}, 0.15)
 	end)
 
 	btn.MouseLeave:Connect(function()
-		tw(btn, {BackgroundColor3 = Color3.fromRGB(20, 20, 28)}, 0.18)
-		tw(bs, {Transparency = 0.9}, 0.18)
+		tw(btn, {BackgroundColor3 = Color3.fromRGB(22, 22, 32)}, 0.15)
 	end)
 
-	btn.MouseButton1Down:Connect(function()
-		tw(btn, {BackgroundColor3 = Color3.fromRGB(100, 55, 200)}, 0.1)
-	end)
+	btn.MouseButton1Click:Connect(press)
 
-	btn.MouseButton1Up:Connect(function()
-		tw(btn, {BackgroundColor3 = Color3.fromRGB(140, 85, 255)}, 0.1)
-		if fn then
-			task.spawn(fn)
+	btn.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.Touch then
+			press()
 		end
 	end)
 
-	self:_update()
+	self:_sync()
 	return btn
 end
 
 function lib:Toggle(text, default, fn)
 	local y = self._y
-	self._y = self._y + 36
+	self._y = self._y + 40
 	local state = default == true
 
 	local row = Instance.new("Frame")
-	row.Size = UDim2.new(1, -16, 0, 28)
-	row.Position = UDim2.new(0, 8, 0, y)
-	row.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	row.Size = UDim2.new(1, -18, 0, 32)
+	row.Position = UDim2.new(0, 9, 0, y)
+	row.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
 	row.BorderSizePixel = 0
 	row.Parent = self.body
 
-	local rc = Instance.new("UICorner")
-	rc.CornerRadius = UDim.new(0, 7)
-	rc.Parent = row
+	Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
 
-	local rs = Instance.new("UIStroke")
+	local rs = Instance.new("UIStroke", row)
 	rs.Color = Color3.fromRGB(255, 255, 255)
 	rs.Thickness = 1
-	rs.Transparency = 0.9
-	rs.Parent = row
+	rs.Transparency = 0.88
 
 	local lbl = Instance.new("TextLabel")
-	lbl.Size = UDim2.new(1, -52, 1, 0)
-	lbl.Position = UDim2.new(0, 10, 0, 0)
+	lbl.Size = UDim2.new(1, -54, 1, 0)
+	lbl.Position = UDim2.new(0, 11, 0, 0)
 	lbl.BackgroundTransparency = 1
 	lbl.Text = text
-	lbl.TextColor3 = Color3.fromRGB(210, 210, 225)
-	lbl.TextSize = 12
+	lbl.TextColor3 = Color3.fromRGB(215, 215, 230)
+	lbl.TextSize = 13
 	lbl.Font = Enum.Font.Gotham
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
 	lbl.Parent = row
 
 	local track = Instance.new("Frame")
-	track.Size = UDim2.new(0, 32, 0, 16)
-	track.Position = UDim2.new(1, -40, 0.5, -8)
-	track.BackgroundColor3 = state and Color3.fromRGB(140, 85, 255) or Color3.fromRGB(38, 38, 52)
+	track.Size = UDim2.new(0, 34, 0, 18)
+	track.Position = UDim2.new(1, -42, 0.5, -9)
+	track.BackgroundColor3 = state and Color3.fromRGB(140, 85, 255) or Color3.fromRGB(40, 40, 56)
 	track.BorderSizePixel = 0
 	track.Parent = row
 
-	local trc = Instance.new("UICorner")
-	trc.CornerRadius = UDim.new(1, 0)
-	trc.Parent = track
+	Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
 	local knob = Instance.new("Frame")
-	knob.Size = UDim2.new(0, 11, 0, 11)
-	knob.Position = state and UDim2.new(1, -14, 0.5, -5.5) or UDim2.new(0, 3, 0.5, -5.5)
+	knob.Size = UDim2.new(0, 12, 0, 12)
+	knob.Position = state and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)
 	knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	knob.BorderSizePixel = 0
 	knob.Parent = track
 
-	local kc = Instance.new("UICorner")
-	kc.CornerRadius = UDim.new(1, 0)
-	kc.Parent = knob
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 
 	local hit = Instance.new("TextButton")
 	hit.Size = UDim2.new(1, 0, 1, 0)
@@ -270,118 +263,80 @@ function lib:Toggle(text, default, fn)
 	hit.Text = ""
 	hit.Parent = row
 
-	local function setToggle(v)
-		state = v
-		tw(track, {BackgroundColor3 = state and Color3.fromRGB(140, 85, 255) or Color3.fromRGB(38, 38, 52)}, 0.2)
-		tw(knob, {Position = state and UDim2.new(1, -14, 0.5, -5.5) or UDim2.new(0, 3, 0.5, -5.5)}, 0.2, Enum.EasingStyle.Quart)
+	local function toggle()
+		state = not state
+		tw(track, {BackgroundColor3 = state and Color3.fromRGB(140, 85, 255) or Color3.fromRGB(40, 40, 56)}, 0.2)
+		tw(knob, {Position = state and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)}, 0.2)
 		if fn then fn(state) end
 	end
 
-	hit.MouseButton1Click:Connect(function()
-		setToggle(not state)
+	hit.MouseButton1Click:Connect(toggle)
+	hit.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.Touch then
+			toggle()
+		end
 	end)
 
-	self:_update()
-
+	self:_sync()
 	return {
-		Set = function(v) setToggle(v) end,
+		Set = function(v)
+			state = v
+			tw(track, {BackgroundColor3 = state and Color3.fromRGB(140, 85, 255) or Color3.fromRGB(40, 40, 56)}, 0.2)
+			tw(knob, {Position = state and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)}, 0.2)
+		end,
 		Get = function() return state end
 	}
 end
 
-function lib:Label(text)
-	local y = self._y
-	self._y = self._y + 24
-
-	local lbl = Instance.new("TextLabel")
-	lbl.Size = UDim2.new(1, -16, 0, 16)
-	lbl.Position = UDim2.new(0, 8, 0, y)
-	lbl.BackgroundTransparency = 1
-	lbl.Text = text
-	lbl.TextColor3 = Color3.fromRGB(110, 110, 140)
-	lbl.TextSize = 11
-	lbl.Font = Enum.Font.Gotham
-	lbl.TextXAlignment = Enum.TextXAlignment.Left
-	lbl.Parent = self.body
-
-	self:_update()
-	return lbl
-end
-
-function lib:Separator()
-	local y = self._y
-	self._y = self._y + 16
-
-	local sep = Instance.new("Frame")
-	sep.Size = UDim2.new(1, -24, 0, 1)
-	sep.Position = UDim2.new(0, 12, 0, y + 7)
-	sep.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	sep.BackgroundTransparency = 0.9
-	sep.BorderSizePixel = 0
-	sep.Parent = self.body
-
-	self:_update()
-end
-
 function lib:Slider(text, min, max, default, fn)
 	local y = self._y
-	self._y = self._y + 50
+	self._y = self._y + 54
 	local val = math.clamp(default or min, min, max)
 
 	local wrap = Instance.new("Frame")
-	wrap.Size = UDim2.new(1, -16, 0, 42)
-	wrap.Position = UDim2.new(0, 8, 0, y)
-	wrap.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	wrap.Size = UDim2.new(1, -18, 0, 46)
+	wrap.Position = UDim2.new(0, 9, 0, y)
+	wrap.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
 	wrap.BorderSizePixel = 0
 	wrap.Parent = self.body
 
-	local wc = Instance.new("UICorner")
-	wc.CornerRadius = UDim.new(0, 7)
-	wc.Parent = wrap
+	Instance.new("UICorner", wrap).CornerRadius = UDim.new(0, 8)
 
-	local ws = Instance.new("UIStroke")
+	local ws = Instance.new("UIStroke", wrap)
 	ws.Color = Color3.fromRGB(255, 255, 255)
 	ws.Thickness = 1
-	ws.Transparency = 0.9
-	ws.Parent = wrap
+	ws.Transparency = 0.88
 
-	local header = Instance.new("Frame")
-	header.Size = UDim2.new(1, 0, 0, 20)
-	header.BackgroundTransparency = 1
-	header.Parent = wrap
+	local slbl = Instance.new("TextLabel")
+	slbl.Size = UDim2.new(0.65, 0, 0, 22)
+	slbl.Position = UDim2.new(0, 11, 0, 0)
+	slbl.BackgroundTransparency = 1
+	slbl.Text = text
+	slbl.TextColor3 = Color3.fromRGB(215, 215, 230)
+	slbl.TextSize = 12
+	slbl.Font = Enum.Font.Gotham
+	slbl.TextXAlignment = Enum.TextXAlignment.Left
+	slbl.Parent = wrap
 
-	local slabel = Instance.new("TextLabel")
-	slabel.Size = UDim2.new(0.6, 0, 1, 0)
-	slabel.Position = UDim2.new(0, 10, 0, 0)
-	slabel.BackgroundTransparency = 1
-	slabel.Text = text
-	slabel.TextColor3 = Color3.fromRGB(210, 210, 225)
-	slabel.TextSize = 11
-	slabel.Font = Enum.Font.Gotham
-	slabel.TextXAlignment = Enum.TextXAlignment.Left
-	slabel.Parent = header
+	local vlbl = Instance.new("TextLabel")
+	vlbl.Size = UDim2.new(0.35, -11, 0, 22)
+	vlbl.Position = UDim2.new(0.65, 0, 0, 0)
+	vlbl.BackgroundTransparency = 1
+	vlbl.Text = tostring(val)
+	vlbl.TextColor3 = Color3.fromRGB(140, 85, 255)
+	vlbl.TextSize = 12
+	vlbl.Font = Enum.Font.GothamBold
+	vlbl.TextXAlignment = Enum.TextXAlignment.Right
+	vlbl.Parent = wrap
 
-	local valLabel = Instance.new("TextLabel")
-	valLabel.Size = UDim2.new(0.4, -10, 1, 0)
-	valLabel.Position = UDim2.new(0.6, 0, 0, 0)
-	valLabel.BackgroundTransparency = 1
-	valLabel.Text = tostring(val)
-	valLabel.TextColor3 = Color3.fromRGB(140, 85, 255)
-	valLabel.TextSize = 11
-	valLabel.Font = Enum.Font.GothamBold
-	valLabel.TextXAlignment = Enum.TextXAlignment.Right
-	valLabel.Parent = header
+	local rail = Instance.new("Frame")
+	rail.Size = UDim2.new(1, -22, 0, 5)
+	rail.Position = UDim2.new(0, 11, 0, 30)
+	rail.BackgroundColor3 = Color3.fromRGB(40, 40, 56)
+	rail.BorderSizePixel = 0
+	rail.Parent = wrap
 
-	local track = Instance.new("Frame")
-	track.Size = UDim2.new(1, -20, 0, 4)
-	track.Position = UDim2.new(0, 10, 0, 28)
-	track.BackgroundColor3 = Color3.fromRGB(38, 38, 52)
-	track.BorderSizePixel = 0
-	track.Parent = wrap
-
-	local trc = Instance.new("UICorner")
-	trc.CornerRadius = UDim.new(1, 0)
-	trc.Parent = track
+	Instance.new("UICorner", rail).CornerRadius = UDim.new(1, 0)
 
 	local pct = (val - min) / (max - min)
 
@@ -389,72 +344,100 @@ function lib:Slider(text, min, max, default, fn)
 	fill.Size = UDim2.new(pct, 0, 1, 0)
 	fill.BackgroundColor3 = Color3.fromRGB(140, 85, 255)
 	fill.BorderSizePixel = 0
-	fill.Parent = track
+	fill.Parent = rail
 
-	local fc = Instance.new("UICorner")
-	fc.CornerRadius = UDim.new(1, 0)
-	fc.Parent = fill
+	Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
 
 	local dot = Instance.new("Frame")
-	dot.Size = UDim2.new(0, 12, 0, 12)
-	dot.Position = UDim2.new(pct, -6, 0.5, -6)
+	dot.Size = UDim2.new(0, 14, 0, 14)
+	dot.Position = UDim2.new(pct, -7, 0.5, -7)
 	dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	dot.BorderSizePixel = 0
-	dot.Parent = track
+	dot.Parent = rail
 
-	local dc = Instance.new("UICorner")
-	dc.CornerRadius = UDim.new(1, 0)
-	dc.Parent = dot
+	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
 
-	local dragging = false
+	local sliding = false
 
-	local function update(input)
-		local rel = (input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X
-		rel = math.clamp(rel, 0, 1)
+	local function applyInput(pos)
+		local rel = math.clamp((pos.X - rail.AbsolutePosition.X) / rail.AbsoluteSize.X, 0, 1)
 		val = math.floor(min + (max - min) * rel)
-		valLabel.Text = tostring(val)
+		vlbl.Text = tostring(val)
 		fill.Size = UDim2.new(rel, 0, 1, 0)
-		dot.Position = UDim2.new(rel, -6, 0.5, -6)
+		dot.Position = UDim2.new(rel, -7, 0.5, -7)
 		if fn then fn(val) end
 	end
 
-	dot.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
+	rail.InputBegan:Connect(function(i)
+		if isTouch(i) then
+			sliding = true
+			applyInput(i.Position)
 		end
 	end)
 
-	track.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-			update(i)
+	dot.InputBegan:Connect(function(i)
+		if isTouch(i) then
+			sliding = true
 		end
 	end)
 
 	UserInputService.InputChanged:Connect(function(i)
-		if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-			update(i)
+		if sliding and isMoved(i) then
+			applyInput(i.Position)
 		end
 	end)
 
 	UserInputService.InputEnded:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = false
+		if isTouch(i) then
+			sliding = false
 		end
 	end)
 
-	self:_update()
-
+	self:_sync()
 	return {
 		Set = function(v)
 			val = math.clamp(v, min, max)
 			local r = (val - min) / (max - min)
-			valLabel.Text = tostring(val)
+			vlbl.Text = tostring(val)
 			fill.Size = UDim2.new(r, 0, 1, 0)
-			dot.Position = UDim2.new(r, -6, 0.5, -6)
+			dot.Position = UDim2.new(r, -7, 0.5, -7)
 		end,
 		Get = function() return val end
 	}
+end
+
+function lib:Label(text)
+	local y = self._y
+	self._y = self._y + 26
+
+	local lbl = Instance.new("TextLabel")
+	lbl.Size = UDim2.new(1, -18, 0, 18)
+	lbl.Position = UDim2.new(0, 9, 0, y)
+	lbl.BackgroundTransparency = 1
+	lbl.Text = text
+	lbl.TextColor3 = Color3.fromRGB(100, 100, 130)
+	lbl.TextSize = 11
+	lbl.Font = Enum.Font.Gotham
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.Parent = self.body
+
+	self:_sync()
+	return lbl
+end
+
+function lib:Separator()
+	local y = self._y
+	self._y = self._y + 18
+
+	local sep = Instance.new("Frame")
+	sep.Size = UDim2.new(1, -26, 0, 1)
+	sep.Position = UDim2.new(0, 13, 0, y + 8)
+	sep.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	sep.BackgroundTransparency = 0.91
+	sep.BorderSizePixel = 0
+	sep.Parent = self.body
+
+	self:_sync()
 end
 
 return lib
